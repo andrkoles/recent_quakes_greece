@@ -6,6 +6,9 @@ library(bslib)
 library(gt)
 library(bsicons)
 
+source("R/awesome_icon.R")
+source("R/palette.R")
+
 ui <- fluidPage(
   theme = bslib::bs_theme(bootswatch = "cosmo"),
   h1(""),
@@ -58,7 +61,7 @@ server <- function(input, output, session) {
   
   # Show the earthquakes table, except for the id column
   output$table <- DT::renderDataTable(
-    quakes() |> select(-id),
+    quakes() |> select(-c(id, ago)),
     server = FALSE,
     selection = 'single',
   )
@@ -85,7 +88,7 @@ server <- function(input, output, session) {
         ~longitude,
         ~latitude,
         layerId = ~id,
-        fillColor = "orange",
+        fillColor = ~pal(cut(ago, breaks = c(0, 1, 2, 6, 12, 24, 48))),
         stroke = TRUE,
         weight = 1,
         color = "black",
@@ -117,6 +120,15 @@ server <- function(input, output, session) {
         )|> map(gt::html),
         popupOptions = c(textsize = "15px")
       ) |>
+      addLegend(
+        "topright",
+        colors = palette,
+        labels = c("0 - 1h ago", "1 - 2h ago", "2 - 6h ago", "6 - 12h ago", 
+                   "12 - 24h ago", "24 - 48h ago"),
+        values = ~ago,
+        bins = 6,
+        opacity = 1
+      ) |>
       addFullscreenControl()
   })
   
@@ -141,17 +153,12 @@ server <- function(input, output, session) {
   observeEvent(input$table_rows_selected, {
     leafletProxy("map") |>
       removeMarker(layerId = "highlight") |>
-      addCircleMarkers(
+      addAwesomeMarkers(
+        icon = awesome,
         data = data_row(),
         ~longitude,
         ~latitude,
         layerId = "highlight",
-        fillColor = "white",
-        stroke = TRUE,
-        weight = 1,
-        color = "black",
-        fillOpacity = 2,
-        radius = ~sqrt(magnitude) * 5,
         popup = ~ paste(
           "Place:", place, "<br/>",
           "Time:", time, "<br/>",
