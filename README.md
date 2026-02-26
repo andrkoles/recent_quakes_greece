@@ -12,4 +12,4 @@ an entry from the earthquakes table, the entry is highlighted with a white
 
 marker on the map.
 
-![](screenshots/screenshot_2.png)
+![](screenshots/screenshot.png)
