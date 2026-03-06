@@ -10,6 +10,8 @@ earthquakes are colored according to how recent they are. When the user clicks
 
 an entry from the earthquakes table, the entry is highlighted with a white
 
-marker on the map.
+marker on the map. The app is now modularized, for the last unmodularized
+
+version check out the `before-modularization` tag.
 
 ![](screenshots/screenshot.png)

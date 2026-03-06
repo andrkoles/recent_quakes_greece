@@ -49,7 +49,7 @@ data <-
                    units = "hours")
   )
 
-# The id will facilitate the table row to map interaction 
+# The id column is necessary for the table row to map interaction
 data$id <- 1:nrow(data)
 
 columns <- c("latitude", "longitude", "depth", "magnitude", "ago")

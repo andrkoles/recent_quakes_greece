@@ -1,13 +1,14 @@
 library(shiny)
-library(dplyr)
-library(leaflet)
-library(leaflet.extras)
 library(bslib)
-library(gt)
 library(bsicons)
 
-source("R/awesome_icon.R")
-source("R/palette.R")
+source("R/tableUI.R")
+source("R/tableServer.R")
+source("R/dataServer.R")
+source("R/mapUI.R")
+source("R/mapServer.R")
+source("R/rowDataServer.R")
+source("R/updateMapServer.R")
 
 ui <- fluidPage(
   theme = bslib::bs_theme(bootswatch = "cosmo"),
@@ -36,12 +37,12 @@ ui <- fluidPage(
   layout_columns(
     card(
       card_header("Click a marker for additional information"),
-      leafletOutput("map"),
+      mapUI("map"),
       full_screen = TRUE
     ),
     card(
       card_header("Select an entry to highlight it on the map"),
-      dataTableOutput("table"),
+      tableUI("table"),
       full_screen = TRUE
     ),
     height = 770
@@ -49,131 +50,27 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  
-  # The RSS feed is read every one minute to stay up to date with latest earth-
-  # quakes
-  quakes <- reactive({
-    # 1 sec = 1000 ms
-    invalidateLater(1000 * 60)
-    source("R/extract_data.r")
-    return(data)
-  })
-  
-  # Show the earthquakes table, except for the id and ago columns
-  output$table <- DT::renderDataTable(
-    quakes() |> select(-c(id, ago)),
-    server = FALSE,
-    selection = 'single',
-  )
-  
-  # Latest earthquake
+
+  df <- callModule(dataServer, "data")
+
+  table <- callModule(tableServer, "table", dataset = df)
+
+  map <- callModule(mapServer, "map", dataset = df)
+
+  row_data <- callModule(rowDataServer, "row_data",
+                         dataset = df, table = table)
+
+  callModule(updateMapServer, "map", row_data = row_data, map = map)
+
   latest <- reactive({
-    quakes() |> 
-      slice_max(order_by = time) |> 
-      select(magnitude, place) |> 
+    df$quakes() |>
+      slice_max(order_by = time) |>
+      select(magnitude, place) |>
       paste()
   })
-  
-  # Latest earthquake value box
+
   output$latest <- renderText({
     paste0(latest()[1], " Magnitude, ", latest()[2])
-  })
-  
-  # Earthquake map.
-  output$map <- renderLeaflet({
-    # All earthquakes except the first-latest
-    leaflet(data = quakes()[-1, ]) |>
-      addProviderTiles(provider = providers$Esri.WorldImagery) |>
-      addCircleMarkers(
-        ~longitude,
-        ~latitude,
-        layerId = ~id,
-        fillColor = ~pal(cut(ago, breaks = c(0, 1, 2, 6, 12, 24, 48))),
-        stroke = TRUE,
-        weight = 1,
-        color = "black",
-        fillOpacity = 1,
-        radius = ~sqrt(magnitude) * 5,
-        popup = ~paste(
-          "Place:", place, "<br/>",
-          "Time:", time, "<br/>",
-          "Magnitude:", round(magnitude, 1), "<br/>",
-          "Depth:",  round(depth), " km", "<br/>",
-          "Latitude", latitude, "<br/>",
-          "Longitude", longitude
-          )|> map(gt::html),
-        popupOptions = c(textsize = 20)) |>
-      # Most recent earthquake is shown with a pulse marker
-      addPulseMarkers(
-        data = quakes()[1, ],
-        ~longitude,
-        ~latitude,
-        layerId = ~ id,
-        icon = makePulseIcon(heartbeat = ~  (1 / sqrt(magnitude))),
-        popup = ~ paste(
-          "Place:", place, "<br/>",
-          "Time:", time, "<br/>",
-          "Magnitude:", round(magnitude, 1), "<br/>",
-          "Depth:",  round(depth), " km", "<br/>",
-          "Latitude", latitude, "<br/>",
-          "Longitude", longitude
-        )|> map(gt::html),
-        popupOptions = c(textsize = "15px")
-      ) |>
-      addLegend(
-        "topright",
-        colors = palette,
-        labels = c("0 - 1h ago", "1 - 2h ago", "2 - 6h ago", "6 - 12h ago", 
-                   "12 - 24h ago", "24 - 48h ago"),
-        values = ~ago,
-        bins = 6,
-        opacity = 1
-      ) |>
-      addFullscreenControl()
-  })
-  
-  # Row selected from earthquakes table
-  row_selected <- reactiveVal(NaN)
-  
-  # Update row_selected() when user clicks a row from the table
-  observeEvent(input$table_rows_selected, {
-    row_selected(input$table_rows_selected)
-  })
-  
-  # Extracts data for the selected row and the zoom level at the moment of 
-  # selection
-  data_row <- reactive({
-    row <- quakes() |> 
-      filter(id == row_selected())
-    row["zoom"] <- input$map_zoom
-    return(row)
-  })
-
-  # Modify the map to highlight the user selected table entry
-  observeEvent(input$table_rows_selected, {
-    leafletProxy("map") |>
-      removeMarker(layerId = "highlight") |>
-      addAwesomeMarkers(
-        icon = awesome,
-        data = data_row(),
-        ~longitude,
-        ~latitude,
-        layerId = "highlight",
-        popup = ~ paste(
-          "Place:", place, "<br/>",
-          "Time:", time, "<br/>",
-          "Magnitude:", round(magnitude, 1), "<br/>",
-          "Depth:",  round(depth), " km", "<br/>",
-          "Latitude", latitude, "<br/>",
-          "Longitude", longitude
-        )|> map(gt::html),
-        popupOptions = popupOptions()
-      ) |>
-      setView(
-        lng = data_row()$longitude,
-        lat = data_row()$latitude,
-        zoom = data_row()$zoom
-      )
   })
 }
 
