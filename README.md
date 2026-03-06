@@ -12,6 +12,6 @@ an entry from the earthquakes table, the entry is highlighted with a white
 
 marker on the map. The app is now modularized, for the last unmodularized
 
-version check out the `before-modularization` tag.
+version check out the `before_modularization` tag.
 
 ![](screenshots/screenshot.png)
