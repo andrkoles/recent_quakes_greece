@@ -59,7 +59,7 @@ server <- function(input, output, session) {
     return(data)
   })
   
-  # Show the earthquakes table, except for the id column
+  # Show the earthquakes table, except for the id and ago columns
   output$table <- DT::renderDataTable(
     quakes() |> select(-c(id, ago)),
     server = FALSE,
