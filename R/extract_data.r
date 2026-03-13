@@ -3,12 +3,6 @@ library(purrr)
 library(dplyr)
 library(tidyRSS)
 
-# RSS feed URL
-# 
-# Data source:
-# Seismological Laboratory of National and Kapodistrian University
-# of Athens (http://dggsl.geol.uoa.gr/en_index.html)
-
 read_rss <- function(url) {
   tryCatch({
     tidyRSS::tidyfeed(url, parse_dates = FALSE) |> 
