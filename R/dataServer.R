@@ -1,7 +1,5 @@
 library(shiny)
 
-source("R/extract_data.r")
-
 # RSS feed URL
 # 
 # Data source:

@@ -4,9 +4,6 @@ library(leaflet.extras)
 library(gt)
 library(dplyr)
 
-source("R/awesome_icon.R")
-source("R/palette.R")
-
 updateMapServer <- function(input,
                             output,
                             session,

@@ -2,14 +2,6 @@ library(shiny)
 library(bslib)
 library(bsicons)
 
-source("R/tableUI.R")
-source("R/tableServer.R")
-source("R/dataServer.R")
-source("R/mapUI.R")
-source("R/mapServer.R")
-source("R/rowDataServer.R")
-source("R/updateMapServer.R")
-
 ui <- fluidPage(
   theme = bslib::bs_theme(bootswatch = "cosmo"),
   h1(""),
